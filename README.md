@@ -4,7 +4,7 @@ This self-contained reproduction bundle accompanies the manuscript:
 
 > **Comparative Evaluation of Low-Field NMR T₂ Inversion across Observation Windows and Echo-Envelope Protocols**
 >
-> Jie Huang, Hao Wei, Di Wang, Can Liang, Caidie Qian, Dingwen Zhou, Zijian Jia* (*Corresponding author: jiazijian1989@usst.edu.cn). Submitted to *Journal of Magnetic Resonance*.
+> Jie Huang, Hao Wei, Di Wang, Caidie Qian, Dingwen Zhou, Can Liang, Zijian Jia* (*Corresponding author: jiazijian1989@usst.edu.cn). Submitted to *Journal of Magnetic Resonance*.
 >
 > Repository: https://github.com/cjq543/lf-nmr-t2-eval
 
@@ -44,7 +44,7 @@ python -B reproduce_paper_stats.py
 `reproduce_paper_stats.py` automatically verifies:
 1. Full `MANIFEST_SHA256.csv` integrity and all 6 checkpoint SHA-256 fingerprints;
 2. Live loading and synthetic forward inference of `A-original`, `A-final` (seeds 1–3), `SmallCNN1D`, `SG+NNLS`, and `ECADSTCN` (`3,563` float32 params);
-3. Exact numerical reproduction of Table 2 (Extended & Original synthetic suites), Table 3 / Fig. 3(b) (`600 ms` severe-cutoff suite & 9-dim OOD), Table 4 / Table S2 / Section S4 (`P-mag` vs. `P-pea`, `Method × Protocol` interaction `Δ_int = +0.0152`, and `Fixed Common-δ` sensitivity checks), External LIME & scale-shift diagnostics, Table 5 (`15-record` cascade noise ladder), and Fig. 6 (`Zynq-7020` ARM replay parity & timing logs).
+3. Exact numerical reproduction of Table 3 (Extended & Original synthetic suites, 35-record `P-mag` vs. `P-pea` holdout, 15-record cascade noise ladder, and ARM hardware consistency), Table 4 / Fig. 3(b) (`600 ms` severe-cutoff & 9-dim perturbation stress suite), Table S2 / Section S4 (`P-mag` vs. `P-pea`, `Method × Protocol` interaction `Δ_int = +0.0152`, and `Fixed Common-δ` sensitivity checks), External LIME & scale-shift diagnostics, and Table 5 / Fig. 6 (`Zynq-7020` ARM replay parity & timing logs).
 
 ---
 

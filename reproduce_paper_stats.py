@@ -9,15 +9,15 @@ Runs purely on files inside this ReproBundle (zero external raw data required):
      synthetic forward passes.
   3. Recomputes all primary statistical tables & confidence intervals reported in the
      manuscript and Supplementary Material:
-       - Table 2 / Section 3.1: Extended synthetic suite (n=1,024; 725 complete + 299 truncated),
+       - Table 3 / Section 3.1: Extended synthetic suite (n=1,024; 725 complete + 299 truncated),
          multi-seed A-final consistency (seeds 1-3), and SmallCNN1D architectural control (Section S6-B).
-       - Table 3 / Section 3.2 / Fig. 3(b): 9-condition OOD suite (3,456 rows; 600 ms n=128).
-       - Table 4 / Section 3.3 / Table S2: 35-record benchtop holdout under P-mag & P-pea,
+       - Table 3 / Table 4 / Section 3.2 / Fig. 3(b): 9-condition stress suite (3,456 rows; 600 ms n=128).
+       - Table 3 / Section 3.3 / Table S2: 35-record benchtop holdout under P-mag & P-pea,
          paired Method x Protocol interaction (record & 7-oil clustered 95% CIs, seed 20261025,
          B = 20,000), and Fixed Common-delta sensitivity checks (delta_common in {0, -0.1400, -0.1700, -0.1725}).
        - External LIME cohort (n=46 P-pea, n=44 P-mag) & vendor scale-shift diagnostics.
-       - Table 5 / Section 3.4: 15-record noise-injection cascade (900 rows; seed=20261026, B=20,000).
-       - Fig. 6 / Section 3.5 / Table S5: Zynq-7020 ARM file replay & compute benchmark verification.
+       - Table 3 / Section 3.4: 15-record noise-injection cascade (900 rows; seed=20261026, B=20,000).
+       - Table 5 / Fig. 6 / Section 3.5 / Table S4: Zynq-7020 ARM file replay & compute benchmark verification.
 """
 import csv
 import hashlib
@@ -246,7 +246,7 @@ def step4_holdout35_interaction_and_common_delta():
         assert rlo > 0 and clo > 0
         print(f"  Interaction A-final vs {label:13s}: Δ_int={mi:+.4f}, rec=[{rlo:+.4f}, {rhi:+.4f}], clus=[{clo:+.4f}, {chi:+.4f}], pos={npos}/35, p_t={pt:.2e}, p_w={pw:.2e}")
 
-    # Fixed Common-delta verification (Table 4 / Section 3.3 / Section S4)
+    # Fixed Common-delta verification (Section 3.3 / Table S2 / Section S4 / Table 6)
     cdelta["delta_str"] = cdelta["delta_common"].map(lambda x: f"{float(x):.4f}")
     for dstr in ["-0.1400", "-0.1700", "-0.1725"]:
         sub = cdelta[cdelta["delta_str"] == dstr]
@@ -279,7 +279,7 @@ def step5_lime_and_delta_diagnostics():
 
 
 def step6_cascade_noise_ladder():
-    print("\n[6/7] Verifying 15-Record Noise-Injection Cascade (Table 5 / Section 3.4)...")
+    print("\n[6/7] Verifying 15-Record Noise-Injection Cascade (Table 3 / Section 3.4)...")
     cl = pd.read_csv(DATA_DIR / "cascade_lowsnr_rows.csv", encoding="utf-8-sig")
     assert len(cl) == 900
     agg = cl.groupby(["noise_level", "inverter", "input_path", "sample_name"], as_index=False)[["pearson_r", "peak_err_log"]].mean()
