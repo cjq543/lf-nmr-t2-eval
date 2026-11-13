@@ -1,0 +1,15 @@
+PROC: /root/sg21_matched_20261029/out/亚麻籽油24h.iq.bin n_pts=90006 ms=80.715 VmHWM=4036 kB checksum=9677841.875568
+PROC: /root/sg21_matched_20261029/out/大豆油24h.iq.bin n_pts=200014 ms=178.815 VmHWM=7780 kB checksum=-8596147.855411
+PROC: /root/sg21_matched_20261029/out/大豆油24h180度.iq.bin n_pts=150014 ms=133.246 VmHWM=6288 kB checksum=22038803.703743
+PROC: /root/sg21_matched_20261029/out/大豆油48h.iq.bin n_pts=200014 ms=178.778 VmHWM=7456 kB checksum=-25843930.976268
+PROC: /root/sg21_matched_20261029/out/大豆油72h180度.iq.bin n_pts=200014 ms=178.875 VmHWM=7880 kB checksum=-2326596.363332
+PROC: /root/sg21_matched_20261029/out/大豆油96h180度.iq.bin n_pts=200014 ms=178.904 VmHWM=7820 kB checksum=4255536.356234
+PROC: /root/sg21_matched_20261029/out/大豆油未加热.iq.bin n_pts=200014 ms=178.646 VmHWM=7888 kB checksum=-11758760.910052
+PROC: /root/sg21_matched_20261029/out/红花籽油24h.iq.bin n_pts=90006 ms=80.698 VmHWM=4040 kB checksum=9162101.485561
+PROC: /root/sg21_matched_20261029/out/红花籽油24h180度.iq.bin n_pts=150014 ms=132.962 VmHWM=6220 kB checksum=-1753651.004365
+PROC: /root/sg21_matched_20261029/out/红花籽油48h.iq.bin n_pts=150014 ms=133.034 VmHWM=6148 kB checksum=-17795750.259387
+PROC: /root/sg21_matched_20261029/out/红花籽油72h180度.iq.bin n_pts=150014 ms=133.220 VmHWM=6140 kB checksum=-5110819.549515
+PROC: /root/sg21_matched_20261029/out/红花籽油96h180度.iq.bin n_pts=150014 ms=133.058 VmHWM=6196 kB checksum=2485129.202393
+PROC: /root/sg21_matched_20261029/out/红花籽油未加热.iq.bin n_pts=150014 ms=133.064 VmHWM=6140 kB checksum=-2050745.120504
+PROC: /root/sg21_matched_20261029/out/菜籽油24h.iq.bin n_pts=90006 ms=80.637 VmHWM=4100 kB checksum=11130722.829150
+PROC: /root/sg21_matched_20261029/out/葵花籽油24h.iq.bin n_pts=90006 ms=80.607 VmHWM=4036 kB checksum=9081435.009589

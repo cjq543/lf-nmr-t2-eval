@@ -1,0 +1,7 @@
+{
+    "sg_win":  51,
+    "selection":  "带mask联合网格(扩展验证集1024条), 2026-10-25同步自查并验证",
+    "nnls_lambda":  200,
+    "sg_poly":  3,
+    "nnls_lambda_direct":  1000
+}

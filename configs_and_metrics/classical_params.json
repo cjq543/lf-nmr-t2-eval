@@ -1,0 +1,6 @@
+{
+ "sg_win": 31,
+ "sg_poly": 2,
+ "nnls_lambda": 50.0,
+ "nnls_lambda_direct": 1000.0
+}

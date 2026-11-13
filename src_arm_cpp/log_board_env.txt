@@ -1,0 +1,9 @@
+Linux rp-f0f3c5 4.9.0-xilinx #1 SMP PREEMPT Thu Apr 28 08:11:20 UTC 2022 armv7l armv7l armv7l GNU/Linux
+              total        used        free      shared  buff/cache   available
+Mem:            431          37         269           3         124         375
+Swap:             0           0           0
+=== CPU Governor & Frequency ===
+CPUFreq: Fixed 667MHz (no dynamic governor, kernel static)
+=== XADC Chip Temperature ===
+2551
+123.040771484

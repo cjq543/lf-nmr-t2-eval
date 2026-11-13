@@ -1,0 +1,137 @@
+[
+ {
+  "name": "大豆油24h",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 200014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "a5e66c5fce729539526bb187e0ae878503884d3614de0511bddf64565c4c6764",
+  "up_sha256": "9789284496b9b60dac64575d4d93e084f550feec27126b74913135065f996c17"
+ },
+ {
+  "name": "大豆油24h180度",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "52ef6bcf101fdb2bfc78b0f520c2cfd95f5f5d3b7fd556652135c258872257c8",
+  "up_sha256": "a5c3ee9b7f6226cb93869e81763fc7a1e9b563a4502767178f45c0cc7ba411ef"
+ },
+ {
+  "name": "红花籽油24h180度",
+  "split": "Val3",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "14efc1f2b64c37a4df220701e14e0ee40a89d228723976e97720d1666dac8342",
+  "up_sha256": "b8794332041335ac5b2e35fca45ddf794c454e4173ee62a1b0f25db9c5d5893a"
+ },
+ {
+  "name": "大豆油48h",
+  "split": "Test3",
+  "te_ms": 1.0,
+  "n_pts": 200014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "2ece0af32b146b58554cae50faf3ca7a5dc91d2d6938d374432dc9da57f9ecc0",
+  "up_sha256": "60d904b3d6ac4fef0c1bc5df9308f6964c7919cbb1d77f3d200b8e57ffca8958"
+ },
+ {
+  "name": "红花籽油48h",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "15c598ecbed9b69a148b8f9c2afdd6f8cf86ce05913b7a3f75763d9c0252b181",
+  "up_sha256": "9f9bf335b7d440acb957740b710000c6c462436a4dad7d8fe1bacdfffc57f146"
+ },
+ {
+  "name": "大豆油72h180度",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 200014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "9cd90407461628630785c26731d3917fc00e07c8045ad86b601484c001360ea9",
+  "up_sha256": "aeedfe37b9aaada1a02a6405b26c43a2cb532db0b43ed66e1c875c28e668012b"
+ },
+ {
+  "name": "红花籽油72h180度",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "3a1d2420c6d9b62d9db9c714a4335f91f028f2819336b7f1fc0556aeb1caf502",
+  "up_sha256": "a46e00bbd59c8efd98267bf6a52dcd1ebf2384712613d13ea82f51d3fee7e05c"
+ },
+ {
+  "name": "大豆油96h180度",
+  "split": "Val3",
+  "te_ms": 1.0,
+  "n_pts": 200014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "4df86c784eb99b97dc786e7204bbd1899d24380e4482de6b5c25ae65fc3b9f29",
+  "up_sha256": "96aaa40d7240e2c73a60c87be38df88f4561ec2f889f3e2fefafa9431741859a"
+ },
+ {
+  "name": "红花籽油96h180度",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "a34fe91327a3a82f8cc2ae332d6b296f757b90716f127001a14b4b06b48e7cd4",
+  "up_sha256": "70b4b5abb1673ca655876dd5ebe25747640bcbd20131a8937c287a83875991c2"
+ },
+ {
+  "name": "大豆油未加热",
+  "split": "Test3",
+  "te_ms": 1.0,
+  "n_pts": 200014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "f358c8e2b893e48c2116953d2bca32dcc94a17b452e3785aabaab07ff0bb531a",
+  "up_sha256": "270f95e7399bafa6d38fa51fd4a067a801708b5dd418364ad723bfdefc37dec6"
+ },
+ {
+  "name": "红花籽油未加热",
+  "split": "Train9",
+  "te_ms": 1.0,
+  "n_pts": 150014,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "76f740b4f495f9a2cd775d70d4b9fa1eebba0374c0f61ad3d2c22bc1d8c5ce99",
+  "up_sha256": "7c6bf48aafbfbb818f028254b464f44f59951d23d4b72b7a6fb80e151b355c03"
+ },
+ {
+  "name": "亚麻籽油24h",
+  "split": "Train9",
+  "te_ms": 0.99992,
+  "n_pts": 90006,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "adf771f89efe9a369b693371077a3402f7977d9cd42fc157844b3fd18d24f25c",
+  "up_sha256": "71931e8b548bf8e4a1de255679f9607d8caa50f4c89ddaa9dcbfd23f7a99a79c"
+ },
+ {
+  "name": "红花籽油24h",
+  "split": "Train9",
+  "te_ms": 0.99992,
+  "n_pts": 90006,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "5ca112e086c13a557dab8df860f9af108e31d1b4e21a14b68a1d94b0d99ff8b4",
+  "up_sha256": "0770c661cee6c2c9573d3fa593d58d19649ef1d265ef92615f58942aedc774aa"
+ },
+ {
+  "name": "菜籽油24h",
+  "split": "Test3",
+  "te_ms": 0.99992,
+  "n_pts": 90006,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "f8af1f3685ed11e2e4abde84437d0d2dd3b5783823a9a59ec5059e2ebc7fbd91",
+  "up_sha256": "bae8ed1c8a5a7e365438b0562cd033f380fff715bf697343bdd364c0bde9f02e"
+ },
+ {
+  "name": "葵花籽油24h",
+  "split": "Val3",
+  "te_ms": 0.99992,
+  "n_pts": 90006,
+  "input_anchor_maxdiff": 0.0,
+  "ref_sha256": "1bf96ba64a581541395de158a86cee7db20d64c8241cf044ea8b3bc65903da35",
+  "up_sha256": "265e1c7de799520a1d5b34eff2b1e0fad8df0fc2699f11eb4b177b2779cf62de"
+ }
+]

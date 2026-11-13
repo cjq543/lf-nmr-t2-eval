@@ -1,0 +1,20 @@
+=== SG(51,3) board timing benchmark ===
+frame points            : 1024
+taps                    : 51 (order 3)
+iterations              : 2000
+SG us per frame (mean)  : 1029.63
+SG us per frame (median): 1028.01
+SG us per frame (min)   : 1028.00
+SG us per frame (p90)   : 1039.34
+SG ms, 391-frame rec(med): 401.951 (single-core)
+VmHWM                   : 948 kB
+
+Reference (Edge model, board-measured, thesis 4.7.1):
+  single-core 66.8 ms/frame, dual-core 35.9 ms/frame,
+  4000-echo record 26.11 s / 14.04 s, VmHWM 8424/8616 KiB
+RESULT_CSV: sg51_3,1029.63,1028.01,1039.34,401.951,948
+
+=== full-record mode (200k points, same workload class as Edge benchmark) ===
+SG full-record time      : 204.3 ms (single pass, single-core)
+VmHWM after full record  : 3236 kB
+RESULT_CSV_FULL: sg51_3,204.3,3236

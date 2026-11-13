@@ -1,0 +1,16 @@
+replay_ok n_pts=200014 frames=391 te_ms=1.00000 secs=16.993 ms_per_frame=43.46 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.747 ms_per_frame=43.50 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.752 ms_per_frame=43.52 threads=2
+replay_ok n_pts=200014 frames=391 te_ms=1.00000 secs=16.984 ms_per_frame=43.44 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.765 ms_per_frame=43.57 threads=2
+replay_ok n_pts=200014 frames=391 te_ms=1.00000 secs=16.996 ms_per_frame=43.47 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.738 ms_per_frame=43.47 threads=2
+replay_ok n_pts=200014 frames=391 te_ms=1.00000 secs=16.998 ms_per_frame=43.47 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.761 ms_per_frame=43.55 threads=2
+replay_ok n_pts=200014 frames=391 te_ms=1.00000 secs=16.989 ms_per_frame=43.45 threads=2
+replay_ok n_pts=150014 frames=293 te_ms=1.00000 secs=12.755 ms_per_frame=43.53 threads=2
+replay_ok n_pts=90006 frames=176 te_ms=0.99992 secs=7.665 ms_per_frame=43.55 threads=2
+replay_ok n_pts=90006 frames=176 te_ms=0.99992 secs=7.655 ms_per_frame=43.49 threads=2
+replay_ok n_pts=90006 frames=176 te_ms=0.99992 secs=7.644 ms_per_frame=43.43 threads=2
+replay_ok n_pts=90006 frames=176 te_ms=0.99992 secs=7.653 ms_per_frame=43.48 threads=2
+ALL_DONE

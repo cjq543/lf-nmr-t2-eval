@@ -1,0 +1,16 @@
+=== SG(21,2) dual-channel board timing benchmark ===
+frame points            : 1024 x 2 ch (interleaved I/Q)
+taps                    : 21 (order 2)
+iterations              : 2000
+SG us per frame (mean)  : 897.23
+SG us per frame (median): 893.80
+SG us per frame (min)   : 892.84
+SG us per frame (p90)   : 901.25
+SG ms, 391-frame rec(med): 349.474 (single-core, dual-ch total)
+VmHWM                   : 904 kB
+RESULT_CSV: sg21_2_dual,897.23,893.80,901.25,349.474,904
+
+=== full-record mode (2 x 200k pts, dual-channel) ===
+SG full-record time      : 178.9 ms (single pass, single-core)
+VmHWM after full record  : 8132 kB
+RESULT_CSV_FULL: sg21_2_dual,178.9,8132

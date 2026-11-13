@@ -1,0 +1,2 @@
+# Keep every file byte-identical so MANIFEST_SHA256.csv verifies after clone
+* -text
