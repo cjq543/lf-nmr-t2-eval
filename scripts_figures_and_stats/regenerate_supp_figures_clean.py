@@ -13,20 +13,32 @@ from pathlib import Path
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
-OOD_CORR_CSV = ROOT / "02_冻结结果权重与代码" / "results" / "ood_rows_corrected.csv"
-OOD_OLD_CSV = ROOT / "02_冻结结果权重与代码" / "results" / "ood_rows.csv"
-EXT_CORR_CSV = ROOT / "04_审阅核验链" / "11_基线修正_20261025" / "corrected_ext_dist_rows.csv"
-SMALLCNN_CSV = ROOT / "04_审阅核验链" / "13_现代基线对照_20261025" / "smallcnn_test_rows.csv"
+ROOT = Path(__file__).resolve().parents[1]
+OOD_CORR_CSV = ROOT / "configs_and_metrics" / "ood_rows_corrected.csv"
+OOD_OLD_CSV = ROOT / "configs_and_metrics" / "ood_rows.csv"
+EXT_CORR_CSV = ROOT / "configs_and_metrics" / "corrected_ext_dist_rows.csv"
+SMALLCNN_CSV = ROOT / "configs_and_metrics" / "smallcnn_test_rows.csv"
 
-FIG_EN_DIR = ROOT / "01_论文正文" / "figures_EN"
-FIG_CN_DIR = ROOT / "01_论文正文" / "figures"
-AUDIT_DIR = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106"
-FONT_DIR = Path(r"C:\Windows\Fonts")
+OUT_DIR = ROOT / "results" / "regenerated_figures"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+FIG_EN_DIR = OUT_DIR
+FIG_CN_DIR = OUT_DIR
 
 
 def load_font(name: str, size: int):
-    return ImageFont.truetype(str(FONT_DIR / name), size)
+    search_dirs = [Path(r"C:\Windows\Fonts"), Path("/usr/share/fonts"), Path("/System/Library/Fonts")]
+    for d in search_dirs:
+        p = d / name
+        if p.exists():
+            return ImageFont.truetype(str(p), size)
+    try:
+        from matplotlib import font_manager
+        is_bold = "bd" in name.lower() or "b." in name.lower()
+        fam = ["Microsoft YaHei", "DejaVu Sans"] if "msyh" in name.lower() else "DejaVu Sans"
+        fp = font_manager.findfont(font_manager.FontProperties(family=fam, weight="bold" if is_bold else "normal"))
+        return ImageFont.truetype(fp, size)
+    except Exception:
+        return ImageFont.load_default()
 
 
 def compute_s1_structured_data():
@@ -203,7 +215,6 @@ def render_fig_s1(lang: str = "EN"):
     if lang == "EN":
         out_path = FIG_EN_DIR / "fig_EN_ood_9dim.png"
         out_img.save(str(out_path), format="PNG", optimize=True)
-        out_img.save(str(AUDIT_DIR / "fig_EN_ood_9dim.png"), format="PNG", optimize=True)
         print(f"Saved Fig. S1 (EN): {out_path}")
     else:
         out_path = FIG_CN_DIR / "fig_ood_9dim.png"
@@ -415,7 +426,6 @@ def render_fig_s2(lang: str = "EN"):
     if lang == "EN":
         out_path = FIG_EN_DIR / "fig_EN_cnn_compare.png"
         out_img.save(str(out_path), format="PNG", optimize=True)
-        out_img.save(str(AUDIT_DIR / "fig_EN_cnn_compare.png"), format="PNG", optimize=True)
         print(f"Saved Fig. S2 (EN): {out_path}")
     else:
         out_path = FIG_CN_DIR / "fig_cnn_compare.png"
@@ -423,49 +433,7 @@ def render_fig_s2(lang: str = "EN"):
         print(f"Saved Fig. S2 (CN): {out_path}")
 
 
-def patch_generate_en_figures_script():
-    script_path = ROOT / "01_论文正文" / "图表脚本" / "generate_en_figures.py"
-    dispatcher_code = '''# -*- coding: utf-8 -*-
-r"""
-Unified, verified entry-point for regenerating JMR submission figures.
-Delegates directly to the audited key-bound figure generators in
-04_审阅核验链/22_Gemini独立审计_20261106/ so that legacy hardcoded arrays or
-external workspace paths can never overwrite the validated manuscript figures.
-"""
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-AUDIT_DIR = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106"
-sys.path.insert(0, str(AUDIT_DIR))
-
-import regenerate_fig3_clean
-import regenerate_fig6_clean
-import regenerate_graphical_abstract
-import regenerate_supp_figures_clean
-
-
-def main():
-    regenerate_fig3_clean.main()
-    regenerate_fig6_clean.render_fig6("EN")
-    regenerate_fig6_clean.render_fig6("CN")
-    regenerate_supp_figures_clean.render_fig_s1("EN")
-    regenerate_supp_figures_clean.render_fig_s1("CN")
-    regenerate_supp_figures_clean.render_fig_s2("EN")
-    regenerate_supp_figures_clean.render_fig_s2("CN")
-    regenerate_graphical_abstract.render_ga()
-    print("All verified JMR figures regenerated from audited sources.")
-
-
 if __name__ == "__main__":
-    main()
-'''
-    script_path.write_text(dispatcher_code, encoding="utf-8")
-    print("Replaced legacy generate_en_figures.py with verified audited figure dispatcher")
-
-
-if __name__ == "__main__":
-    patch_generate_en_figures_script()
     render_fig_s1("EN")
     render_fig_s1("CN")
     render_fig_s2("EN")

@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
-r"""
-Unified, verified entry-point for regenerating JMR submission figures.
-Delegates directly to the audited key-bound figure generators in
-04_审阅核验链/22_Gemini独立审计_20261106/ so that legacy hardcoded arrays or
-external workspace paths can never overwrite the validated manuscript figures.
+"""
+Unified, standalone entry-point for regenerating JMR submission figures inside
+the public ReproBundle without any external workspace path dependencies.
+Outputs are written under results/regenerated_figures/.
 """
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-AUDIT_DIR = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106"
-sys.path.insert(0, str(AUDIT_DIR))
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
 
 import regenerate_fig3_clean
 import regenerate_fig6_clean
@@ -27,7 +25,7 @@ def main():
     regenerate_supp_figures_clean.render_fig_s2("EN")
     regenerate_supp_figures_clean.render_fig_s2("CN")
     regenerate_graphical_abstract.render_ga()
-    print("All verified JMR figures regenerated from audited sources.")
+    print("All verified JMR figures regenerated standalone under results/regenerated_figures/.")
 
 
 if __name__ == "__main__":

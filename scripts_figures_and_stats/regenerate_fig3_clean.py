@@ -18,10 +18,39 @@ import csv
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
-CSV_PATH = ROOT / "01_论文正文" / "effect_forest_numbers.csv"
-OUT_DIR = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106" / "fig3_clean"
+ROOT = Path(__file__).resolve().parents[1]
+CSV_PATH = ROOT / "configs_and_metrics" / "effect_forest_numbers.csv"
+OUT_DIR = ROOT / "results" / "regenerated_figures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _find_font(candidates, mpl_family="DejaVu Sans", weight="normal"):
+    search_dirs = [
+        Path(r"C:\Windows\Fonts"),
+        Path("/usr/share/fonts"),
+        Path("/System/Library/Fonts"),
+        Path("/Library/Fonts"),
+    ]
+    for name in candidates:
+        for d in search_dirs:
+            p = d / name
+            if p.exists():
+                return str(p)
+    try:
+        from matplotlib import font_manager
+        return font_manager.findfont(font_manager.FontProperties(family=mpl_family, weight=weight))
+    except Exception:
+        return None
+
+
+def _load_font(candidates, size: int, mpl_family="DejaVu Sans", weight="normal"):
+    p = _find_font(candidates, mpl_family=mpl_family, weight=weight)
+    if p:
+        try:
+            return ImageFont.truetype(p, size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
 
 
 def load_rows():
@@ -34,22 +63,23 @@ def fmt_signed(x: float, digits: int = 3) -> str:
 
 
 def get_fonts(lang: str, scale: int = 2):
-    font_dir = Path(r"C:\Windows\Fonts")
     if lang == "EN":
-        reg = str(font_dir / "arial.ttf")
-        bold = str(font_dir / "arialbd.ttf")
+        reg_c = ["arial.ttf", "segoeui.ttf", "LiberationSans-Regular.ttf", "DejaVuSans.ttf"]
+        bold_c = ["arialbd.ttf", "segoeuib.ttf", "LiberationSans-Bold.ttf", "DejaVuSans-Bold.ttf"]
+        fam = "DejaVu Sans"
     else:
-        reg = str(font_dir / "msyh.ttc")
-        bold = str(font_dir / "msyhbd.ttc")
+        reg_c = ["msyh.ttc", "simhei.ttf", "NotoSansCJK-Regular.ttc", "DejaVuSans.ttf"]
+        bold_c = ["msyhbd.ttc", "simhei.ttf", "NotoSansCJK-Bold.ttc", "DejaVuSans-Bold.ttf"]
+        fam = ["Microsoft YaHei", "SimHei", "DejaVu Sans"]
     return {
-        "title": ImageFont.truetype(bold, 32 * scale),
-        "axis_title": ImageFont.truetype(bold, 31 * scale),
-        "col_hdr": ImageFont.truetype(bold, 30 * scale),
-        "label": ImageFont.truetype(reg, 30 * scale),
-        "tick": ImageFont.truetype(reg, 27 * scale),
-        "val_bold": ImageFont.truetype(bold, 29 * scale),
-        "val_reg": ImageFont.truetype(reg, 29 * scale),
-        "legend": ImageFont.truetype(reg, 27 * scale),
+        "title": _load_font(bold_c, 32 * scale, fam, "bold"),
+        "axis_title": _load_font(bold_c, 31 * scale, fam, "bold"),
+        "col_hdr": _load_font(bold_c, 30 * scale, fam, "bold"),
+        "label": _load_font(reg_c, 30 * scale, fam, "normal"),
+        "tick": _load_font(reg_c, 27 * scale, fam, "normal"),
+        "val_bold": _load_font(bold_c, 29 * scale, fam, "bold"),
+        "val_reg": _load_font(reg_c, 29 * scale, fam, "normal"),
+        "legend": _load_font(reg_c, 27 * scale, fam, "normal"),
     }
 
 

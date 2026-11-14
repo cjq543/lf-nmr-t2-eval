@@ -247,16 +247,26 @@ def step4_holdout35_interaction_and_common_delta():
         print(f"  Interaction A-final vs {label:13s}: Δ_int={mi:+.4f}, rec=[{rlo:+.4f}, {rhi:+.4f}], clus=[{clo:+.4f}, {chi:+.4f}], pos={npos}/35, p_t={pt:.2e}, p_w={pw:.2e}")
 
     # Fixed Common-delta verification (Section 3.3 / Table S2 / Section S4 / Table 6)
+    # Align records strictly to canonical `order` from holdout35_pmag_wide.csv via sample_label_cn
+    # so bootstrap resampling order matches Section S4 bit-for-bit.
+    s4_expected = {
+        "-0.1400": (0.0035, 0.0138, 0.0062, 0.0123),
+        "-0.1700": (0.0007, 0.0122, 0.0037, 0.0107),
+        "-0.1725": (0.0005, 0.0121, 0.0035, 0.0106),
+    }
     cdelta["delta_str"] = cdelta["delta_common"].map(lambda x: f"{float(x):.4f}")
     for dstr in ["-0.1400", "-0.1700", "-0.1725"]:
         sub = cdelta[cdelta["delta_str"] == dstr]
-        pm = sub[sub["input_protocol"] == "raw_mag"].pivot(index="record_id", columns="branch", values="pearson_r")
-        pp = sub[sub["input_protocol"] == "pea"].pivot(index="record_id", columns="branch", values="pearson_r")
-        coils = sub[sub["input_protocol"] == "raw_mag"].drop_duplicates("record_id").set_index("record_id").loc[pm.index, "oil_type"].values
+        pm = sub[sub["input_protocol"] == "raw_mag"].pivot(index="sample_label_cn", columns="branch", values="pearson_r").loc[order]
+        pp = sub[sub["input_protocol"] == "pea"].pivot(index="sample_label_cn", columns="branch", values="pearson_r").loc[order]
+        coils = sub[sub["input_protocol"] == "raw_mag"].drop_duplicates("sample_label_cn").set_index("sample_label_cn").loc[order, "oil_type"].values
         d_int = ((pm["A-final"] - pm["SG(31,2)+NNLS"]) - (pp["A-final"] - pp["SG(31,2)+NNLS"])).values
         mi, rlo, rhi = boot_record_ci(d_int, seed=20261025)
         _, clo, chi = boot_cluster_ci(coils, d_int, seed=20261025)
         assert rlo > 0 and clo > 0
+        e_rlo, e_rhi, e_clo, e_chi = s4_expected[dstr]
+        assert abs(round(rlo, 4) - e_rlo) < 1e-6 and abs(round(rhi, 4) - e_rhi) < 1e-6, (dstr, rlo, rhi, e_rlo, e_rhi)
+        assert abs(round(clo, 4) - e_clo) < 1e-6 and abs(round(chi, 4) - e_chi) < 1e-6, (dstr, clo, chi, e_clo, e_chi)
         print(
             f"  Fixed Common-delta ({dstr}): P-mag A-final={pm['A-final'].mean():.4f} vs SG={pm['SG(31,2)+NNLS'].mean():.4f}; "
             f"P-pea A-final={pp['A-final'].mean():.4f} vs SG={pp['SG(31,2)+NNLS'].mean():.4f}; "

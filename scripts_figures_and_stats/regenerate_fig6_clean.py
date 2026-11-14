@@ -25,23 +25,32 @@ import re
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
-LOG_OMP = ROOT / "08_板端证据" / "board_benchmark_real_20261024" / "log_m5_omp.txt"
-LOG_SINGLE = ROOT / "08_板端证据" / "board_benchmark_real_20261024" / "log_m5_single.txt"
-LOG_REPLAY = ROOT / "08_板端证据" / "板端回放_20261024" / "data_down" / "replay_timing.log"
-HOST_JSON = ROOT / "04_审阅核验链" / "04_审阅与证据链" / "review_20261024" / "additional_checks.json"
+ROOT = Path(__file__).resolve().parents[1]
+LOG_OMP = ROOT / "src_arm_cpp" / "log_m5_omp.txt"
+LOG_SINGLE = ROOT / "src_arm_cpp" / "log_m5_single.txt"
+LOG_REPLAY = ROOT / "src_arm_cpp" / "replay_timing.log"
+HOST_JSON = ROOT / "configs_and_metrics" / "host_pc_benchmark_checks.json"
 
-FIG_EN = ROOT / "01_论文正文" / "figures_EN" / "fig_EN_timing_budget.png"
-FIG_CN = ROOT / "01_论文正文" / "figures" / "fig_timing_budget.png"
-AUDIT_DIR = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106"
-FONT_DIR = Path(r"C:\Windows\Fonts")
+OUT_DIR = ROOT / "results" / "regenerated_figures"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+FIG_EN = OUT_DIR / "fig_EN_timing_budget.png"
+FIG_CN = OUT_DIR / "fig_timing_budget.png"
 
 
 def load_font(name: str, size: int):
-    p = FONT_DIR / name
-    if p.exists():
-        return ImageFont.truetype(str(p), size)
-    return ImageFont.load_default()
+    search_dirs = [Path(r"C:\Windows\Fonts"), Path("/usr/share/fonts"), Path("/System/Library/Fonts")]
+    for d in search_dirs:
+        p = d / name
+        if p.exists():
+            return ImageFont.truetype(str(p), size)
+    try:
+        from matplotlib import font_manager
+        is_bold = "bd" in name.lower() or "b." in name.lower()
+        fam = ["Microsoft YaHei", "DejaVu Sans"] if "msyh" in name.lower() else "DejaVu Sans"
+        fp = font_manager.findfont(font_manager.FontProperties(family=fam, weight="bold" if is_bold else "normal"))
+        return ImageFont.truetype(fp, size)
+    except Exception:
+        return ImageFont.load_default()
 
 
 def verify_and_load_timing_data():
@@ -293,7 +302,6 @@ def render_fig6(lang: str = "EN"):
     out_img = img.resize((2400, 1080), Image.Resampling.LANCZOS)
     if lang == "EN":
         out_img.save(str(FIG_EN), format="PNG", optimize=True)
-        out_img.save(str(AUDIT_DIR / "fig_EN_timing_budget.png"), format="PNG", optimize=True)
         print(f"Saved Fig. 6 (EN): {FIG_EN}")
     else:
         out_img.save(str(FIG_CN), format="PNG", optimize=True)

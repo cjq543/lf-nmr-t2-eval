@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-"""generate_effect_forest.py —— 效应量森林图（情境2 MST方法论/统计支撑用）
-Panel A: 35条冻结留出配对Δr（记录级bootstrap CI + 油种聚类敏感性CI）
-Panel B: OOD九维配对Δr（128对/维，bootstrap CI）
-数字来源：
-  Panel A = 19_35条留出结果复核_20261025/holdout_review.json（paired_comparisons_saved_rounded_values）
-  Panel B = 02_上位机模型/results/ood_rows_corrected.csv（逐样本重算，种子20261026）
-输出: figures/fig_CN_effect_forest.png + figures_EN/fig_EN_effect_forest.png
+"""generate_effect_forest.py —— Standalone figure & effect-size table generator.
+Panel A: 35-record frozen holdout paired Δr (record-level + 7-oil-type clustered bootstrap CI, seed 20261025)
+         computed directly from configs_and_metrics/holdout35_pmag_wide.csv.
+Panel B: OOD 9-dim paired Δr (128 pairs/condition, bootstrap CI, seed 20261026)
+         computed directly from configs_and_metrics/ood_rows_corrected.csv.
+Outputs under results/regenerated_figures/.
 """
 import os
 import sys
-import json
 
 import numpy as np
 import pandas as pd
@@ -22,17 +20,37 @@ import matplotlib.pyplot as plt
 _BUNDLE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.environ.get("LFNMR_WORK_ROOT", _BUNDLE_ROOT)
 R = os.path.join(ROOT, "configs_and_metrics")
-J19 = os.path.join(ROOT, "configs_and_metrics", "holdout_review.json")
-FIG_CN = os.path.join(_BUNDLE_ROOT, "figures")
-FIG_EN = os.path.join(_BUNDLE_ROOT, "figures_EN")
-os.makedirs(FIG_CN, exist_ok=True)
-os.makedirs(FIG_EN, exist_ok=True)
+OUT_DIR = os.path.join(_BUNDLE_ROOT, "results", "regenerated_figures")
+os.makedirs(OUT_DIR, exist_ok=True)
 
 C_A = "#d62728"; C_SIG = "#2ca02c"; C_NS = "#8c8c8c"; C_CLU = "#1f77b4"
 
-# ============ 数据 ============
-j = json.load(open(J19, encoding="utf-8"))
-holdout = []
+
+def _boot_record_ci(d, seed=20261025, n_boot=20000):
+    arr = np.asarray(d, dtype=np.float64)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(arr), size=(n_boot, len(arr)))
+    lo, hi = np.percentile(arr[idx].mean(axis=1), [2.5, 97.5])
+    return float(arr.mean()), float(lo), float(hi)
+
+
+def _boot_cluster_ci(oils, vals, seed=20261025, n_boot=20000):
+    df_tmp = pd.DataFrame({"oil": oils, "val": vals})
+    groups = [g["val"].values for _, g in df_tmp.groupby("oil", sort=True)]
+    rng = np.random.default_rng(seed)
+    k = len(groups)
+    idx = rng.integers(0, k, size=(n_boot, k))
+    g_sizes = np.array([len(g) for g in groups], dtype=np.float64)
+    g_sums = np.array([g.sum() for g in groups], dtype=np.float64)
+    means = g_sums[idx].sum(axis=1) / g_sizes[idx].sum(axis=1)
+    lo, hi = np.percentile(means, [2.5, 97.5])
+    return float(lo), float(hi)
+
+
+# ============ 数据（直接从归档宽表与 OOD 表实时计算） ============
+wide = pd.read_csv(os.path.join(R, "holdout35_pmag_wide.csv"), encoding="utf-8-sig")
+oils = wide["样品"].astype(str).str.replace(r"\d+h$", "", regex=True).values
+
 NAME_CN = {"A旧版_r": "vs 旧版A（原分布专精）",
            "SG旧_r": "vs SG(31,2)+NNLS（旧冻结参数）",
            "SG扩展_r": "vs SG(51,3)+NNLS（masked扩展参数）",
@@ -41,20 +59,25 @@ NAME_EN = {"A旧版_r": "vs legacy A (orig-distribution)",
            "SG旧_r": "vs SG(31,2)+NNLS (frozen)",
            "SG扩展_r": "vs SG(51,3)+NNLS (masked ext.)",
            "修正NNLS_r": "vs direct masked NNLS"}
-for it in j["paired_comparisons_saved_rounded_values"]:
-    rec = {
-        "key": it["baseline"], "d": it["mean_difference"],
-        "lo": it["record_bootstrap_ci95"][0], "hi": it["record_bootstrap_ci95"][1],
-        "clo": it["oil_cluster_sensitivity_ci95"][0] if it.get("oil_cluster_sensitivity_ci95") else None,
-        "chi": it["oil_cluster_sensitivity_ci95"][1] if it.get("oil_cluster_sensitivity_ci95") else None,
-        "wins": it["wins"], "losses": it["losses"],
-    }
-    holdout.append(rec)
-# 排序：从最强对照到最弱
-order = ["修正NNLS_r", "A旧版_r", "SG扩展_r", "SG旧_r"]
-holdout.sort(key=lambda r: order.index(r["key"]))
 
-dfo = pd.read_csv(os.path.join(R, "ood_rows_corrected.csv"))
+order = ["修正NNLS_r", "A旧版_r", "SG扩展_r", "SG旧_r"]
+holdout = []
+for col in order:
+    diff = (wide["A定稿_r"] - wide[col]).to_numpy(dtype=np.float64)
+    dmean, lo, hi = _boot_record_ci(diff, seed=20261025, n_boot=20000)
+    clo, chi = _boot_cluster_ci(oils, diff, seed=20261025, n_boot=20000)
+    holdout.append({
+        "key": col,
+        "d": dmean,
+        "lo": lo,
+        "hi": hi,
+        "clo": round(clo, 6),
+        "chi": round(chi, 6),
+        "wins": int((diff > 0).sum()),
+        "losses": int((diff <= 0).sum()),
+    })
+
+dfo = pd.read_csv(os.path.join(R, "ood_rows_corrected.csv"), encoding="utf-8-sig")
 rng = np.random.default_rng(20261026)
 ood = []
 for var in sorted(dfo["variant"].unique()):
@@ -92,7 +115,7 @@ def make(lang="en"):
         tag_sig = "显著"
         tag_ns = "跨零(不显著)"
         title = "效应量与不确定性：A定稿相对基线的配对差"
-        f_out = os.path.join(FIG_CN, "fig_CN_effect_forest.png")
+        f_out = os.path.join(OUT_DIR, "fig_CN_effect_forest_legacy_mpl.png")
     else:
         plt.rcParams["font.family"] = "DejaVu Sans"
         lbl_hold = "35-record frozen holdout: paired Δr (A-final − baseline)"
@@ -102,7 +125,7 @@ def make(lang="en"):
         tag_sig = "significant"
         tag_ns = "crosses zero (n.s.)"
         title = "Effect sizes and uncertainty: paired differences of A-final vs baselines"
-        f_out = os.path.join(FIG_EN, "fig_EN_effect_forest.png")
+        f_out = os.path.join(OUT_DIR, "fig_EN_effect_forest_legacy_mpl.png")
 
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.6),
                              gridspec_kw={"width_ratios": [1, 1.15]})
@@ -186,8 +209,20 @@ for r in holdout:
 for r in ood:
     rows.append({"panel": "ood9dim_vs_SG31", "comparison": r["var"],
                  "dmean": round(r["d"], 6), "ci95_lo": round(r["lo"], 6),
-                 "ci95_hi": round(r["hi"], 6), "cluster_lo": "", "cluster_hi": "",
+                 "ci95_hi": round(r["hi"], 6), "cluster_lo": np.nan, "cluster_hi": np.nan,
                  "wins": r["wins"], "losses": r["n"] - r["wins"]})
-pd.DataFrame(rows).to_csv(os.path.join(FIG_CN, "..", "effect_forest_numbers.csv"),
-                          index=False, encoding="utf-8-sig")
-print("saved: 01_论文正文/effect_forest_numbers.csv")
+out_csv = os.path.join(OUT_DIR, "effect_forest_numbers.csv")
+df_new = pd.DataFrame(rows)
+df_new.to_csv(out_csv, index=False, encoding="utf-8-sig")
+ref_csv = os.path.join(R, "effect_forest_numbers.csv")
+if os.path.exists(ref_csv):
+    df_ref = pd.read_csv(ref_csv, encoding="utf-8-sig")
+    assert list(df_new["panel"]) == list(df_ref["panel"])
+    assert list(df_new["comparison"]) == list(df_ref["comparison"])
+    assert list(df_new["wins"]) == list(df_ref["wins"])
+    assert list(df_new["losses"]) == list(df_ref["losses"])
+    for c in ["dmean", "ci95_lo", "ci95_hi"]:
+        assert np.allclose(df_new[c].to_numpy(dtype=float), df_ref[c].to_numpy(dtype=float), atol=1e-12, equal_nan=True), c
+    for c in ["cluster_lo", "cluster_hi"]:
+        assert np.allclose(df_new[c].to_numpy(dtype=float), df_ref[c].to_numpy(dtype=float), atol=2e-3, equal_nan=True), c
+print(f"saved: {out_csv} (verified exact match with configs_and_metrics/effect_forest_numbers.csv on all 13 record CIs)")

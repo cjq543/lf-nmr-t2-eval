@@ -1,394 +1,339 @@
 # -*- coding: utf-8 -*-
 """
-Regenerate the Graphical Abstract (01_论文正文/figures_EN/GA_JMR_draft_20261106.png)
-at 2660 x 1400 px (rendered at 2x = 5320 x 2800 px and downsampled with LANCZOS).
-Strictly aligned with Main Text Tables 1, 3, 4, 5, 6 and Sections 3.1-3.5:
-- Forward RMSE on 35 benchtop holdout records: A-final is lower under both P-mag (0.0326 vs. 0.0369)
-  and P-pea (0.0097 vs. 0.0163).
-- Cascade noise ladder (15 records, 3 upstream paths: Raw, SG(21,2), Edge ECA-DS-TCN):
-  - At alpha = 1.0 with NNLS downstream: mean r rises from 0.885 (Raw) to 0.912 (SG(21,2)) and 0.919 (Edge);
-    dominant-peak error drops from 0.3335 decade (Raw) to 0.1450 (SG(21,2)) and 0.1494 (Edge).
-  - With fixed A-original downstream: at alpha = 1.0, mean r is 0.888 (Raw), 0.893 (SG(21,2)), 0.894 (Edge);
-    at alpha <= 0.3, un-denoised Raw has the highest observed mean r.
-- Zynq-7020 ARM replay (15 records, 3,563 float32 params = 14.25 kB):
-  - 4,000-echo record: dual-core Edge ECA-DS-TCN takes 14.04 s vs. 0.179 s for single-core dual-channel SG(21,2).
-  - 3,000- / 1,800-echo records (Fig. 6): dual-core Edge takes 10.52 s / 6.32 s.
+Regenerate the simplified 2.5:1 (2500 x 1000 px, 300 dpi) Graphical Abstract
+inside the standalone public ReproBundle (outputs to results/regenerated_figures/).
+
+Design adheres strictly to Elsevier's Graphical Abstract guidelines (500:200 aspect
+ratio, minimal dense text, large high-contrast labels readable down to 500 x 200 px)
+while preserving exact verified manuscript numbers and separating 16.99 s file-replay
+harness time from 14.04 s vs. 0.179 s fixed-input compute benchmarks.
 """
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT_PATH = ROOT / "01_论文正文" / "figures_EN" / "GA_JMR_draft_20261106.png"
-BACKUP_OUT = ROOT / "04_审阅核验链" / "22_Gemini独立审计_20261106" / "GA_JMR_draft_20261106.png"
-
-FONT_DIR = Path(r"C:\Windows\Fonts")
+ROOT = Path(__file__).resolve().parents[1]
+OUT_DIR = ROOT / "results" / "regenerated_figures"
 
 
-def load_font(name: str, size: int):
-    return ImageFont.truetype(str(FONT_DIR / name), size)
+def _load_font(candidates, size: int, bold: bool = False):
+    search_dirs = [
+        Path(r"C:\Windows\Fonts"),
+        Path("/usr/share/fonts"),
+        Path("/System/Library/Fonts"),
+        Path("/Library/Fonts"),
+    ]
+    for name in candidates:
+        for d in search_dirs:
+            p = d / name
+            if p.exists():
+                return ImageFont.truetype(str(p), size)
+    try:
+        from matplotlib import font_manager
+        fp = font_manager.findfont(
+            font_manager.FontProperties(
+                family="DejaVu Sans",
+                weight="bold" if bold else "normal",
+            )
+        )
+        return ImageFont.truetype(fp, size)
+    except Exception:
+        return ImageFont.load_default()
 
 
-def draw_rounded_rect(draw, box, radius, fill=None, outline=None, width=1):
-    draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
+def _centered(draw, cx: float, y: float, text: str, font, fill):
+    bb = draw.textbbox((0, 0), text, font=font)
+    w = bb[2] - bb[0]
+    draw.text((cx - w / 2.0, y), text, font=font, fill=fill)
+    return bb
+
+
+def _fit_text(draw, box_x0: float, box_x1: float, y: float, text: str, font, fill, align="center"):
+    bb = draw.textbbox((0, 0), text, font=font)
+    w = bb[2] - bb[0]
+    avail = box_x1 - box_x0
+    assert w <= avail, f"GA text overflow ({w:.0f} > {avail:.0f}): {text!r}"
+    if align == "center":
+        x = (box_x0 + box_x1 - w) / 2.0
+    elif align == "right":
+        x = box_x1 - w
+    else:
+        x = box_x0
+    draw.text((x, y), text, font=font, fill=fill)
+
+
+def build_ga_image() -> Image.Image:
+    S = 2
+    W, H = 2500 * S, 1000 * S
+    img = Image.new("RGB", (W, H), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
+
+    reg_c = ["arial.ttf", "segoeui.ttf", "LiberationSans-Regular.ttf", "DejaVuSans.ttf"]
+    bold_c = ["arialbd.ttf", "segoeuib.ttf", "LiberationSans-Bold.ttf", "DejaVuSans-Bold.ttf"]
+
+    f_hdr = _load_font(bold_c, 31 * S, bold=True)
+    f_sec = _load_font(bold_c, 27 * S, bold=True)
+    f_val = _load_font(bold_c, 29 * S, bold=True)
+    f_badge = _load_font(bold_c, 25 * S, bold=True)
+    f_lbl = _load_font(bold_c, 24 * S, bold=True)
+    f_sub = _load_font(reg_c, 23 * S, bold=False)
+    f_tick = _load_font(reg_c, 22 * S, bold=False)
+
+    NAVY = (22, 43, 76)
+    SLATE = (71, 85, 105)
+    BORDER = (196, 206, 220)
+    HDR_BG = (234, 242, 250)
+    BLUE = (28, 99, 168)
+    BLUE_LT = (232, 243, 253)
+    ORANGE = (214, 92, 12)
+    ORANGE_LT = (254, 241, 228)
+    RED = (194, 44, 44)
+    TEAL = (19, 122, 107)
+    TEAL_LT = (230, 246, 243)
+    GRID = (220, 228, 238)
+
+    top_y, bot_y = 22 * S, 978 * S
+    hdr_h = 68 * S
+    panels = [
+        (24 * S, 816 * S, "1. Observation Window & Loss"),
+        (842 * S, 1658 * S, "2. Protocol Flips Ranking (n = 35)"),
+        (1684 * S, 2476 * S, "3. Denoising & Zynq-7020 Cost"),
+    ]
+    for x0, x1, title in panels:
+        draw.rounded_rectangle((x0, top_y, x1, bot_y), radius=18 * S, fill=(255, 255, 255), outline=BORDER, width=2 * S)
+        draw.rounded_rectangle((x0, top_y, x1, top_y + hdr_h), radius=18 * S, fill=HDR_BG, outline=BORDER, width=2 * S)
+        draw.rectangle((x0 + 2 * S, top_y + hdr_h - 18 * S, x1 - 2 * S, top_y + hdr_h), fill=HDR_BG)
+        draw.line([(x0, top_y + hdr_h), (x1, top_y + hdr_h)], fill=BORDER, width=2 * S)
+        _fit_text(draw, x0 + 16 * S, x1 - 16 * S, top_y + 17 * S, title, f_hdr, NAVY, align="center")
+
+    # =========================================================================
+    # PANEL 1: Observation Window Schematic (top) + Bar Comparison (bottom)
+    # =========================================================================
+    p1_x0, p1_x1 = panels[0][0], panels[0][1]
+    ax0, ay0, ax1, ay1 = p1_x0 + 84 * S, top_y + 102 * S, p1_x1 - 36 * S, top_y + 380 * S
+    aw, ah = ax1 - ax0, ay1 - ay0
+    x600 = ax0 + int(aw * (600.0 / 3000.0))
+
+    draw.rectangle((ax0, ay0, x600, ay1), fill=(254, 238, 238))
+    draw.rectangle((x600, ay0, ax1, ay1), fill=(238, 246, 254))
+    for frac in [0.2, 0.4, 0.6, 0.8, 1.0]:
+        gx = ax0 + int(aw * frac)
+        draw.line([(gx, ay0), (gx, ay1)], fill=GRID, width=1 * S)
+    for y_d in range(ay0, ay1, 18 * S):
+        draw.line([(x600, y_d), (x600, min(y_d + 10 * S, ay1))], fill=RED, width=4 * S)
+
+    pts = []
+    for i in range(180):
+        t = 3000.0 * i / 179.0
+        amp = 0.58 * math.exp(-t / 180.0) + 0.42 * math.exp(-t / 820.0)
+        pts.append((ax0 + int(aw * (t / 3000.0)), ay1 - int(ah * (0.08 + 0.84 * amp))))
+    for i in range(0, 180, 4):
+        t = 3000.0 * i / 179.0
+        amp = 0.58 * math.exp(-t / 180.0) + 0.42 * math.exp(-t / 820.0)
+        v = max(0.02, min(0.97, amp + 0.036 * math.sin(i * 1.9) * math.cos(i * 0.7)))
+        px = ax0 + int(aw * (t / 3000.0))
+        py = ay1 - int(ah * (0.08 + 0.84 * v))
+        r = 3 * S
+        draw.ellipse((px - r, py - r, px + r, py + r), fill=(156, 170, 190))
+    draw.line(pts, fill=NAVY, width=5 * S)
+    draw.line([(ax0, ay0), (ax0, ay1), (ax1, ay1)], fill=NAVY, width=3 * S)
+
+    for tv, lbl in [(0, "0"), (600, "600"), (1800, "1,800"), (3000, "3,000 ms")]:
+        gx = ax0 + int(aw * (tv / 3000.0))
+        draw.line([(gx, ay1), (gx, ay1 + 8 * S)], fill=NAVY, width=2 * S)
+        _centered(draw, gx if tv < 3000 else gx - 20 * S, ay1 + 12 * S, lbl, f_tick, RED if tv == 600 else NAVY)
+
+    draw.text((ax0 - 60 * S, ay0 - 6 * S), "1.0", font=f_tick, fill=NAVY)
+    draw.text((ax0 - 60 * S, ay1 - 24 * S), "0.0", font=f_tick, fill=NAVY)
+    draw.rounded_rectangle((x600 + 24 * S, ay0 + 14 * S, ax1 - 22 * S, ay0 + 112 * S), radius=10 * S, fill=(255, 255, 255), outline=BLUE, width=2 * S)
+    _fit_text(draw, x600 + 36 * S, ax1 - 30 * S, ay0 + 24 * S, "Extended & Trunc. (n = 1,024)", f_lbl, BLUE, "left")
+    _fit_text(draw, x600 + 36 * S, ax1 - 30 * S, ay0 + 60 * S, "Valid-window mask: t ≤ t_max", f_sub, NAVY, "left")
+
+    draw.rounded_rectangle((x600 + 24 * S, ay0 + 126 * S, x600 + 346 * S, ay0 + 180 * S), radius=8 * S, fill=(255, 245, 245), outline=RED, width=2 * S)
+    _fit_text(draw, x600 + 34 * S, x600 + 336 * S, ay0 + 139 * S, "600 ms cutoff (n = 128)", f_lbl, RED, "center")
+    draw.line([(x600 + 24 * S, ay0 + 153 * S), (x600 + 4 * S, ay0 + 153 * S)], fill=RED, width=3 * S)
+
+    # Lower half: Paired Bar Chart on Panel 1
+    leg_y = top_y + 444 * S
+    draw.rectangle((p1_x0 + 120 * S, leg_y, p1_x0 + 158 * S, leg_y + 26 * S), fill=BLUE, outline=NAVY, width=2 * S)
+    draw.text((p1_x0 + 170 * S, leg_y - 2 * S), "A-final", font=f_sec, fill=NAVY)
+    draw.rectangle((p1_x0 + 390 * S, leg_y, p1_x0 + 428 * S, leg_y + 26 * S), fill=ORANGE, outline=NAVY, width=2 * S)
+    draw.text((p1_x0 + 440 * S, leg_y - 2 * S), "SG+NNLS", font=f_sec, fill=NAVY)
+
+    bx0, by0, bx1, by1 = p1_x0 + 104 * S, top_y + 516 * S, p1_x1 - 36 * S, top_y + 840 * S
+    ymin, ymax = 0.84, 0.98
+    def y_p1(v): return int(by1 - (by1 - by0) * ((v - ymin) / (ymax - ymin)))
+
+    for tk in [0.85, 0.90, 0.95]:
+        yy = y_p1(tk)
+        draw.line([(bx0, yy), (bx1, yy)], fill=GRID, width=2 * S)
+        draw.text((bx0 - 66 * S, yy - 13 * S), f"{tk:.2f}", font=f_tick, fill=NAVY)
+    draw.line([(bx0, by0), (bx0, by1), (bx1, by1)], fill=NAVY, width=3 * S)
+    draw.text((p1_x0 + 28 * S, by0 - 34 * S), "Mean r", font=f_lbl, fill=NAVY)
+
+    bw, gap = 82 * S, 16 * S
+    g1x = bx0 + int((bx1 - bx0) * 0.27)
+    g2x = bx0 + int((bx1 - bx0) * 0.74)
+
+    for cx, va, vb, d_txt, d_col, g_lbl in [
+        (g1x, 0.945, 0.916, "Δr = +0.029", BLUE, "1,024 Sims"),
+        (g2x, 0.887, 0.929, "Δr = −0.042", ORANGE, "600 ms Stress"),
+    ]:
+        xA0, xA1 = cx - bw - gap // 2, cx - gap // 2
+        xB0, xB1 = cx + gap // 2, cx + gap // 2 + bw
+        yA, yB = y_p1(va), y_p1(vb)
+        draw.rectangle((xA0, yA, xA1, by1), fill=BLUE, outline=NAVY, width=2 * S)
+        draw.rectangle((xB0, yB, xB1, by1), fill=ORANGE, outline=NAVY, width=2 * S)
+        _centered(draw, (xA0 + xA1) / 2.0, yA - 36 * S, f"{va:.3f}", f_val, BLUE)
+        _centered(draw, (xB0 + xB1) / 2.0, yB - 36 * S, f"{vb:.3f}", f_val, ORANGE)
+        top_bar = min(yA, yB)
+        _centered(draw, cx, top_bar - 72 * S, d_txt, f_badge, d_col)
+        _centered(draw, cx, by1 + 12 * S, g_lbl, f_sec, NAVY)
+
+    _fit_text(draw, p1_x0 + 24 * S, p1_x1 - 24 * S, bot_y - 46 * S,
+              "Moderate trunc.: A-final leads | Severe cutoff: NNLS leads", f_lbl, SLATE, "center")
+
+    # =========================================================================
+    # PANEL 2: Protocol Reversal Interaction (n = 35 Measured Holdout)
+    # =========================================================================
+    p2_x0, p2_x1 = panels[1][0], panels[1][1]
+    ix0, iy0, ix1, iy1 = p2_x0 + 114 * S, top_y + 128 * S, p2_x1 - 48 * S, top_y + 478 * S
+    pymin, pymax = 0.886, 0.910
+    def y_p2(v): return int(iy1 - (iy1 - iy0) * ((v - pymin) / (pymax - pymin)))
+
+    # Subtle shaded zones for P-mag vs P-pea
+    xm = ix0 + int((ix1 - ix0) * 0.25)
+    xp = ix0 + int((ix1 - ix0) * 0.75)
+    for tk in [0.890, 0.895, 0.900, 0.905]:
+        yy = y_p2(tk)
+        draw.line([(ix0, yy), (ix1, yy)], fill=GRID, width=2 * S)
+        draw.text((p2_x0 + 26 * S, yy - 13 * S), f"{tk:.3f}", font=f_tick, fill=NAVY)
+    draw.line([(ix0, iy0), (ix0, iy1), (ix1, iy1)], fill=NAVY, width=3 * S)
+    draw.text((p2_x0 + 26 * S, iy0 - 34 * S), "Mean ref. r", font=f_lbl, fill=NAVY)
+
+    # Slopes connecting P-mag -> P-pea
+    y_A_m, y_A_p = y_p2(0.8948), y_p2(0.8929)
+    y_S_m, y_S_p = y_p2(0.8909), y_p2(0.9042)
+    draw.line([(xm, y_A_m), (xp, y_A_p)], fill=BLUE, width=7 * S)
+    draw.line([(xm, y_S_m), (xp, y_S_p)], fill=ORANGE, width=7 * S)
+
+    rd = 13 * S
+    for cx, cy, col in [(xm, y_A_m, BLUE), (xp, y_A_p, BLUE), (xm, y_S_m, ORANGE), (xp, y_S_p, ORANGE)]:
+        draw.ellipse((cx - rd, cy - rd, cx + rd, cy + rd), fill=col, outline=(255, 255, 255), width=3 * S)
+
+    # Direct high-contrast data labels cleanly positioned away from lines
+    draw.text((xm - 108 * S, y_A_m - 42 * S), "A: 0.8948", font=f_val, fill=BLUE)
+    draw.text((xm - 116 * S, y_S_m + 18 * S), "SG: 0.8909", font=f_val, fill=ORANGE)
+    draw.text((xp - 38 * S, y_S_p - 48 * S), "SG: 0.9042", font=f_val, fill=ORANGE)
+    draw.text((xp - 34 * S, y_A_p + 20 * S), "A: 0.8929", font=f_val, fill=BLUE)
+
+    _centered(draw, xm, iy1 + 14 * S, "P-mag (raw |I+iQ|)", f_sec, NAVY)
+    _centered(draw, xp, iy1 + 14 * S, "P-pea (vendor peak)", f_sec, NAVY)
+
+    # Two concise Forward RMSE badges right below columns
+    card_y0, card_y1 = iy1 + 66 * S, iy1 + 150 * S
+    draw.rounded_rectangle((p2_x0 + 36 * S, card_y0, (p2_x0 + p2_x1) // 2 - 12 * S, card_y1),
+                           radius=12 * S, fill=BLUE_LT, outline=BLUE, width=2 * S)
+    _fit_text(draw, p2_x0 + 44 * S, (p2_x0 + p2_x1) // 2 - 20 * S, card_y0 + 10 * S,
+              "P-mag Fwd RMSE", f_lbl, BLUE, "center")
+    _fit_text(draw, p2_x0 + 44 * S, (p2_x0 + p2_x1) // 2 - 20 * S, card_y0 + 44 * S,
+              "0.0326 vs. 0.0369", f_badge, NAVY, "center")
+
+    draw.rounded_rectangle(((p2_x0 + p2_x1) // 2 + 12 * S, card_y0, p2_x1 - 36 * S, card_y1),
+                           radius=12 * S, fill=ORANGE_LT, outline=ORANGE, width=2 * S)
+    _fit_text(draw, (p2_x0 + p2_x1) // 2 + 20 * S, p2_x1 - 44 * S, card_y0 + 10 * S,
+              "P-pea Fwd RMSE", f_lbl, ORANGE, "center")
+    _fit_text(draw, (p2_x0 + p2_x1) // 2 + 20 * S, p2_x1 - 44 * S, card_y0 + 44 * S,
+              "0.0097 vs. 0.0163", f_badge, NAVY, "center")
+
+    # Interaction & Common-delta takeaway card
+    box2_y0, box2_y1 = card_y1 + 22 * S, bot_y - 24 * S
+    draw.rounded_rectangle((p2_x0 + 36 * S, box2_y0, p2_x1 - 36 * S, box2_y1),
+                           radius=14 * S, fill=(242, 246, 251), outline=NAVY, width=3 * S)
+    _fit_text(draw, p2_x0 + 48 * S, p2_x1 - 48 * S, box2_y0 + 22 * S,
+              "Method × Protocol: Δ_int = +0.0152", f_hdr, BLUE, "center")
+    _fit_text(draw, p2_x0 + 48 * S, p2_x1 - 48 * S, box2_y0 + 74 * S,
+              "95% CI > 0 (record & 7-oil clustered)", f_sec, NAVY, "center")
+    _fit_text(draw, p2_x0 + 48 * S, p2_x1 - 48 * S, box2_y0 + 124 * S,
+              "Significant across Common-δ (−0.14 to −0.1725)", f_badge, TEAL, "center")
+    _fit_text(draw, p2_x0 + 48 * S, p2_x1 - 48 * S, box2_y0 + 174 * S,
+              "Fix protocol; report spectral r + Fwd RMSE", f_lbl, SLATE, "center")
+
+    # =========================================================================
+    # PANEL 3: Cascade Denoising (top) + Zynq-7020 Execution Budget (bottom)
+    # =========================================================================
+    p3_x0, p3_x1 = panels[2][0], panels[2][1]
+    _fit_text(draw, p3_x0 + 28 * S, p3_x1 - 28 * S, top_y + 88 * S,
+              "15-Rec Cascade @ α = 1.0 (NNLS Downstream)", f_sec, NAVY, "center")
+
+    cx0, cx1 = p3_x0 + 206 * S, p3_x1 - 160 * S
+    cy_base = top_y + 136 * S
+    row_h = 68 * S
+    c_min, c_max = 0.85, 0.94
+    def x_c(v): return int(cx0 + (cx1 - cx0) * ((v - c_min) / (c_max - c_min)))
+
+    c_rows = [
+        ("Raw", 0.885, (140, 150, 165), "Peak err 0.334"),
+        ("SG(21,2)", 0.912, BLUE, "Peak err 0.145"),
+        ("Edge TCN", 0.919, TEAL, "Peak err 0.149"),
+    ]
+    for idx, (lbl, val, col, p_txt) in enumerate(c_rows):
+        ry0 = cy_base + idx * row_h
+        ry1 = ry0 + 46 * S
+        x_end = x_c(val)
+        _fit_text(draw, p3_x0 + 24 * S, cx0 - 14 * S, ry0 + 6 * S, lbl, f_sec, NAVY, "right")
+        draw.rectangle((cx0, ry0, x_end, ry1), fill=col, outline=NAVY, width=2 * S)
+        draw.text((x_end + 12 * S, ry0 + 4 * S), f"r = {val:.3f}", font=f_val, fill=col)
+    draw.line([(cx0, cy_base - 6 * S), (cx0, cy_base + 3 * row_h - 16 * S)], fill=NAVY, width=3 * S)
+
+    draw.rounded_rectangle((p3_x0 + 32 * S, top_y + 342 * S, p3_x1 - 32 * S, top_y + 428 * S),
+                           radius=12 * S, fill=ORANGE_LT, outline=ORANGE, width=2 * S)
+    _fit_text(draw, p3_x0 + 42 * S, p3_x1 - 42 * S, top_y + 352 * S,
+              "α = 1.0 peak err: 0.334 → 0.145 (SG) / 0.149 (Edge)", f_lbl, NAVY, "center")
+    _fit_text(draw, p3_x0 + 42 * S, p3_x1 - 42 * S, top_y + 390 * S,
+              "Low/mod. noise (α ≤ 0.3): |Δr| ≤ 0.0006", f_lbl, ORANGE, "center")
+
+    # Divider + ARM Benchmark Section
+    draw.line([(p3_x0 + 28 * S, top_y + 448 * S), (p3_x1 - 28 * S, top_y + 448 * S)], fill=BORDER, width=2 * S)
+    _fit_text(draw, p3_x0 + 28 * S, p3_x1 - 28 * S, top_y + 464 * S,
+              "Zynq-7020 ARM @ 4,000 Echoes (14.25 kB)", f_sec, NAVY, "center")
+
+    draw.rounded_rectangle((p3_x0 + 32 * S, top_y + 510 * S, p3_x1 - 32 * S, top_y + 566 * S),
+                           radius=10 * S, fill=TEAL_LT, outline=TEAL, width=2 * S)
+    _fit_text(draw, p3_x0 + 42 * S, p3_x1 - 42 * S, top_y + 523 * S,
+              "Float32 Parity: r = 1.000000 (rel. RMSE ≤ 3.2e-6)", f_badge, TEAL, "center")
+
+    tx0, tx1 = p3_x0 + 272 * S, p3_x1 - 208 * S
+    ty_base = top_y + 596 * S
+    t_row_h = 74 * S
+    t_bars = [
+        ("15-rec Replay (2T)", 16.99, ORANGE, "16.99 s harness"),
+        ("Edge Compute (2T)", 14.04, BLUE, "14.04 s"),
+        ("SG(21,2) Comp. (1T)", 0.179, TEAL, "0.179 s (78.5×)"),
+    ]
+    for idx, (lbl, sec_v, col, val_s) in enumerate(t_bars):
+        ry0 = ty_base + idx * t_row_h
+        ry1 = ry0 + 46 * S
+        bar_w = max(8 * S, int((tx1 - tx0) * (sec_v / 17.5)))
+        _fit_text(draw, p3_x0 + 18 * S, tx0 - 12 * S, ry0 + 8 * S, lbl, f_lbl, NAVY, "right")
+        draw.rectangle((tx0, ry0, tx0 + bar_w, ry1), fill=col, outline=NAVY, width=2 * S)
+        _fit_text(draw, tx0 + bar_w + 10 * S, p3_x1 - 18 * S, ry0 + 8 * S, val_s, f_badge, col, "left")
+    draw.line([(tx0, ty_base - 6 * S), (tx0, ty_base + 3 * t_row_h - 18 * S)], fill=NAVY, width=3 * S)
+
+    _fit_text(draw, p3_x0 + 24 * S, p3_x1 - 24 * S, bot_y - 46 * S,
+              "Deploy neural denoise only if cascade gain warrants latency", f_lbl, SLATE, "center")
+
+    return img.resize((2500, 1000), Image.Resampling.LANCZOS)
 
 
 def render_ga():
-    S = 2
-    W, H = 2660 * S, 1400 * S
-    img = Image.new("RGB", (W, H), (249, 250, 252))
-    draw = ImageDraw.Draw(img)
-
-    f_title = load_font("segoeuib.ttf", 38 * S)
-    f_sub = load_font("segoeuii.ttf", 22 * S)
-    f_panel_hdr = load_font("segoeuib.ttf", 23 * S)
-    f_sec_bold = load_font("segoeuib.ttf", 19 * S)
-    f_body = load_font("segoeui.ttf", 18 * S)
-    f_body_bold = load_font("segoeuib.ttf", 18 * S)
-    f_small = load_font("segoeui.ttf", 16 * S)
-    f_small_bold = load_font("segoeuib.ttf", 16 * S)
-    f_small_ital = load_font("segoeuii.ttf", 16 * S)
-    f_num_big = load_font("segoeuib.ttf", 23 * S)
-
-    C_NAVY = (22, 43, 76)
-    C_SLATE = (75, 88, 108)
-    C_BORDER = (206, 214, 224)
-    C_PANEL_BG = (255, 255, 255)
-    C_BLUE = (31, 119, 180)
-    C_BLUE_LIGHT = (232, 243, 252)
-    C_ORANGE = (217, 95, 2)
-    C_ORANGE_LIGHT = (254, 241, 230)
-    C_RED = (196, 48, 43)
-    C_TEAL = (24, 128, 112)
-    C_GRAY_BG = (242, 245, 249)
-
-    title_text = "Processing choices affect LF-NMR T₂ recovery and execution cost"
-    sub_text = (
-        "Valid observation windows, envelope protocols, and downstream inverters "
-        "govern method selection under constrained budgets"
-    )
-    tb = draw.textbbox((0, 0), title_text, font=f_title)
-    draw.text(((W - (tb[2] - tb[0])) // 2, 24 * S), title_text, font=f_title, fill=C_NAVY)
-    sb = draw.textbbox((0, 0), sub_text, font=f_sub)
-    draw.text(((W - (sb[2] - sb[0])) // 2, 80 * S), sub_text, font=f_sub, fill=C_SLATE)
-
-    top_y = 130 * S
-    bot_y = 1364 * S
-    pA_x0, pA_x1 = 36 * S, 846 * S
-    pB_x0, pB_x1 = 876 * S, 1736 * S
-    pC_x0, pC_x1 = 1766 * S, 2624 * S
-
-    for (x0, x1) in [(pA_x0, pA_x1), (pB_x0, pB_x1), (pC_x0, pC_x1)]:
-        draw_rounded_rect(draw, (x0, top_y, x1, bot_y), radius=16 * S, fill=C_PANEL_BG, outline=C_BORDER, width=2 * S)
-        draw_rounded_rect(draw, (x0, top_y, x1, top_y + 56 * S), radius=16 * S, fill=(238, 243, 249), outline=C_BORDER, width=2 * S)
-        draw.rectangle((x0 + 2 * S, top_y + 40 * S, x1 - 2 * S, top_y + 56 * S), fill=(238, 243, 249))
-        draw.line([(x0, top_y + 56 * S), (x1, top_y + 56 * S)], fill=C_BORDER, width=2 * S)
-
-    draw.text((pA_x0 + 22 * S, top_y + 12 * S), "A   Observation Window & Protocol Conditions", font=f_panel_hdr, fill=C_NAVY)
-    draw.text((pB_x0 + 22 * S, top_y + 12 * S), "B   Tested Synthetic Suites: Mean Spectral r", font=f_panel_hdr, fill=C_NAVY)
-    draw.text((pC_x0 + 22 * S, top_y + 12 * S), "C   Key Findings for Processing-Path Selection", font=f_panel_hdr, fill=C_NAVY)
-
-    # =========================================================================
-    # PANEL A: Schematic CPMG Decay + Window Regimes + Protocol Split
-    # =========================================================================
-    ax_x0, ax_y0 = pA_x0 + 78 * S, top_y + 112 * S
-    ax_x1, ax_y1 = pA_x1 - 36 * S, top_y + 636 * S
-    ax_w, ax_h = ax_x1 - ax_x0, ax_y1 - ax_y0
-
-    x_600 = ax_x0 + int(ax_w * (600.0 / 3000.0))
-    draw.rectangle((ax_x0, ax_y0, x_600, ax_y1), fill=(254, 242, 242))
-    draw.rectangle((x_600, ax_y0, ax_x1, ax_y1), fill=(240, 247, 253))
-
-    for frac in [0.2, 0.4, 0.6, 0.8, 1.0]:
-        gx = ax_x0 + int(ax_w * frac)
-        draw.line([(gx, ax_y0), (gx, ax_y1)], fill=(224, 230, 238), width=1 * S)
-    for frac in [0.25, 0.5, 0.75]:
-        gy = ax_y0 + int(ax_h * frac)
-        draw.line([(ax_x0, gy), (ax_x1, gy)], fill=(224, 230, 238), width=1 * S)
-
-    for y_dash in range(ax_y0, ax_y1, 18 * S):
-        draw.line([(x_600, y_dash), (x_600, min(y_dash + 10 * S, ax_y1))], fill=C_RED, width=3 * S)
-
-    pts_clean = []
-    for i in range(200):
-        t_ms = 3000.0 * i / 199.0
-        amp = 0.58 * math.exp(-t_ms / 180.0) + 0.42 * math.exp(-t_ms / 820.0)
-        px = ax_x0 + int(ax_w * (t_ms / 3000.0))
-        py = ax_y1 - int(ax_h * (0.06 + 0.88 * amp))
-        pts_clean.append((px, py))
-
-    for i in range(0, 200, 3):
-        t_ms = 3000.0 * i / 199.0
-        amp = 0.58 * math.exp(-t_ms / 180.0) + 0.42 * math.exp(-t_ms / 820.0)
-        pseudo_noise = 0.032 * math.sin(i * 1.9) * math.cos(i * 0.7)
-        val = max(0.01, min(0.98, amp + pseudo_noise))
-        px = ax_x0 + int(ax_w * (t_ms / 3000.0))
-        py = ax_y1 - int(ax_h * (0.06 + 0.88 * val))
-        r_dot = 3 * S
-        draw.ellipse((px - r_dot, py - r_dot, px + r_dot, py + r_dot), fill=(160, 175, 195))
-
-    draw.line(pts_clean, fill=C_NAVY, width=4 * S)
-    draw.line([(ax_x0, ax_y0), (ax_x0, ax_y1), (ax_x1, ax_y1)], fill=C_NAVY, width=3 * S)
-
-    for ms_val in [0, 600, 1200, 1800, 2400, 3000]:
-        gx = ax_x0 + int(ax_w * (ms_val / 3000.0))
-        draw.line([(gx, ax_y1), (gx, ax_y1 + 8 * S)], fill=C_NAVY, width=2 * S)
-        lbl = str(ms_val)
-        lb = draw.textbbox((0, 0), lbl, font=f_small)
-        draw.text((gx - (lb[2] - lb[0]) // 2, ax_y1 + 10 * S), lbl, font=f_small, fill=C_NAVY)
-
-    xlbl = "Echo time t (ms) on 3,000 ms reference grid (schematic)"
-    xb = draw.textbbox((0, 0), xlbl, font=f_small_bold)
-    draw.text((ax_x0 + (ax_w - (xb[2] - xb[0])) // 2, ax_y1 + 40 * S), xlbl, font=f_small_bold, fill=C_NAVY)
-
-    for y_val, frac in [("1.0", 0.94), ("0.5", 0.50), ("0.0", 0.06)]:
-        gy = ax_y1 - int(ax_h * frac)
-        draw.line([(ax_x0 - 8 * S, gy), (ax_x0, gy)], fill=C_NAVY, width=2 * S)
-        draw.text((ax_x0 - 42 * S, gy - 12 * S), y_val, font=f_small, fill=C_NAVY)
-
-    draw_rounded_rect(draw, (x_600 + 14 * S, ax_y0 + 18 * S, ax_x1 - 14 * S, ax_y0 + 114 * S),
-                      radius=10 * S, fill=(255, 255, 255), outline=C_BLUE, width=2 * S)
-    draw.text((x_600 + 26 * S, ax_y0 + 24 * S), "Extended suite (1,024 records):", font=f_small_bold, fill=C_BLUE)
-    draw.text((x_600 + 26 * S, ax_y0 + 52 * S), "• 725 complete-window records (3,000 ms)", font=f_small, fill=C_NAVY)
-    draw.text((x_600 + 26 * S, ax_y0 + 78 * S), "• 299 randomly truncated (400–2,800 ms)", font=f_small, fill=C_NAVY)
-
-    draw_rounded_rect(draw, (x_600 + 14 * S, ax_y0 + 132 * S, ax_x1 - 14 * S, ax_y0 + 204 * S),
-                      radius=10 * S, fill=(255, 245, 245), outline=C_RED, width=2 * S)
-    draw.text((x_600 + 26 * S, ax_y0 + 138 * S), "Separate 600 ms severe-cutoff stress suite:", font=f_small_bold, fill=C_RED)
-    draw.text((x_600 + 26 * S, ax_y0 + 166 * S), "128 paired records clipped at t_max = 600 ms", font=f_small, fill=C_NAVY)
-
-    boxA_y0 = ax_y1 + 86 * S
-    boxA_y1 = bot_y - 24 * S
-    draw_rounded_rect(draw, (pA_x0 + 24 * S, boxA_y0, pA_x1 - 24 * S, boxA_y1),
-                      radius=12 * S, fill=C_GRAY_BG, outline=C_BORDER, width=2 * S)
-
-    draw.text((pA_x0 + 38 * S, boxA_y0 + 16 * S),
-              "Unified Evaluation & Processing Factors:", font=f_sec_bold, fill=C_NAVY)
-
-    bullets_A = [
-        ("1. Valid-window masking:",
-         "Forward loss & residual metrics integrate only within valid echoes (t ≤ t_valid)."),
-        ("2. Two measured envelope protocols (35 benchtop holdout records):",
-         "P-mag (raw magnitude interpolation) vs. P-pea (vendor echo-peak envelope)."),
-        ("3. Downstream inverter pairing (15-record noise ladder):",
-         "Three upstream paths (Raw, SG(21,2), Edge) → NNLS (λ = 1000) vs. A-original."),
-        ("4. Embedded verification target (Zynq-7020 ARM Cortex-A9):",
-         "14.25 kB float32 ECA-DS-TCN (3,563 params) vs. on-board dual-channel SG(21,2)."),
-    ]
-    cur_y = boxA_y0 + 54 * S
-    max_boxA_x = pA_x1 - 32 * S
-    for b_title, b_desc in bullets_A:
-        draw.text((pA_x0 + 38 * S, cur_y), b_title, font=f_small_bold, fill=C_BLUE)
-        bb = draw.textbbox((pA_x0 + 54 * S, cur_y + 24 * S), b_desc, font=f_small)
-        assert bb[2] <= max_boxA_x, f"Panel A bullet overflows: {b_desc}"
-        draw.text((pA_x0 + 54 * S, cur_y + 24 * S), b_desc, font=f_small, fill=C_NAVY)
-        cur_y += 66 * S
-
-    # =========================================================================
-    # PANEL B: Grouped Bar Chart (Extended Suite vs. 600 ms Stress Suite)
-    # =========================================================================
-    ban_x0, ban_y0 = pB_x0 + 36 * S, top_y + 80 * S
-    ban_x1, ban_y1 = pB_x1 - 36 * S, top_y + 148 * S
-    draw_rounded_rect(draw, (ban_x0, ban_y0, ban_x1, ban_y1),
-                      radius=12 * S, fill=(238, 245, 253), outline=C_BLUE, width=2 * S)
-    b_txt1 = "Different advantages across tested suites"
-    b_txt2 = "Method performance depends on observation window coverage & tail truncation"
-    bt1 = draw.textbbox((0, 0), b_txt1, font=f_sec_bold)
-    bt2 = draw.textbbox((0, 0), b_txt2, font=f_small_ital)
-    draw.text(((pB_x0 + pB_x1 - (bt1[2] - bt1[0])) // 2, ban_y0 + 8 * S), b_txt1, font=f_sec_bold, fill=C_NAVY)
-    draw.text(((pB_x0 + pB_x1 - (bt2[2] - bt2[0])) // 2, ban_y0 + 38 * S), b_txt2, font=f_small_ital, fill=C_SLATE)
-
-    leg_y = top_y + 172 * S
-    draw.rectangle((pB_x0 + 70 * S, leg_y, pB_x0 + 106 * S, leg_y + 24 * S), fill=C_BLUE, outline=C_NAVY, width=1 * S)
-    draw.text((pB_x0 + 118 * S, leg_y - 2 * S), "A-final (expanded learned model)", font=f_small_bold, fill=C_NAVY)
-
-    draw.rectangle((pB_x0 + 455 * S, leg_y, pB_x0 + 491 * S, leg_y + 24 * S), fill=C_ORANGE, outline=C_NAVY, width=1 * S)
-    draw.text((pB_x0 + 503 * S, leg_y - 2 * S), "SG+NNLS (classical baseline)", font=f_small_bold, fill=C_NAVY)
-
-    ch_x0, ch_y0 = pB_x0 + 96 * S, top_y + 228 * S
-    ch_x1, ch_y1 = pB_x1 - 44 * S, top_y + 812 * S
-    ch_w, ch_h = ch_x1 - ch_x0, ch_y1 - ch_y0
-    y_min, y_max = 0.85, 0.97
-
-    def val_to_y(v: float) -> int:
-        return ch_y1 - int(ch_h * ((v - y_min) / (y_max - y_min)))
-
-    for tick in [0.86, 0.88, 0.90, 0.92, 0.94, 0.96]:
-        gy = val_to_y(tick)
-        draw.line([(ch_x0, gy), (ch_x1, gy)], fill=(224, 230, 238), width=2 * S)
-        draw.line([(ch_x0 - 8 * S, gy), (ch_x0, gy)], fill=C_NAVY, width=2 * S)
-        tl = f"{tick:.2f}"
-        draw.text((ch_x0 - 54 * S, gy - 12 * S), tl, font=f_small, fill=C_NAVY)
-
-    draw.line([(ch_x0, ch_y0), (ch_x0, ch_y1), (ch_x1, ch_y1)], fill=C_NAVY, width=3 * S)
-
-    g1_cx = ch_x0 + int(ch_w * 0.27)
-    bw = 82 * S
-    gap = 16 * S
-
-    b1a_x0, b1a_x1 = g1_cx - bw - gap // 2, g1_cx - gap // 2
-    b1a_y0 = val_to_y(0.945)
-    draw.rectangle((b1a_x0, b1a_y0, b1a_x1, ch_y1), fill=C_BLUE, outline=C_NAVY, width=2 * S)
-    v1a = "0.945"
-    vb = draw.textbbox((0, 0), v1a, font=f_num_big)
-    draw.text(((b1a_x0 + b1a_x1 - (vb[2] - vb[0])) // 2, b1a_y0 - 34 * S), v1a, font=f_num_big, fill=C_BLUE)
-
-    b1b_x0, b1b_x1 = g1_cx + gap // 2, g1_cx + gap // 2 + bw
-    b1b_y0 = val_to_y(0.916)
-    draw.rectangle((b1b_x0, b1b_y0, b1b_x1, ch_y1), fill=C_ORANGE, outline=C_NAVY, width=2 * S)
-    v1b = "0.916"
-    vb = draw.textbbox((0, 0), v1b, font=f_num_big)
-    draw.text(((b1b_x0 + b1b_x1 - (vb[2] - vb[0])) // 2, b1b_y0 - 34 * S), v1b, font=f_num_big, fill=C_ORANGE)
-
-    dt1 = "Δr = +0.029 (all 1,024)"
-    dtb1 = draw.textbbox((0, 0), dt1, font=f_small_bold)
-    draw.text((g1_cx - (dtb1[2] - dtb1[0]) // 2, b1a_y0 - 66 * S), dt1, font=f_small_bold, fill=C_BLUE)
-
-    g2_cx = ch_x0 + int(ch_w * 0.75)
-
-    b2a_x0, b2a_x1 = g2_cx - bw - gap // 2, g2_cx - gap // 2
-    b2a_y0 = val_to_y(0.887)
-    draw.rectangle((b2a_x0, b2a_y0, b2a_x1, ch_y1), fill=C_BLUE, outline=C_NAVY, width=2 * S)
-    v2a = "0.887"
-    vb = draw.textbbox((0, 0), v2a, font=f_num_big)
-    draw.text(((b2a_x0 + b2a_x1 - (vb[2] - vb[0])) // 2, b2a_y0 - 34 * S), v2a, font=f_num_big, fill=C_BLUE)
-
-    b2b_x0, b2b_x1 = g2_cx + gap // 2, g2_cx + gap // 2 + bw
-    b2b_y0 = val_to_y(0.929)
-    draw.rectangle((b2b_x0, b2b_y0, b2b_x1, ch_y1), fill=C_ORANGE, outline=C_NAVY, width=2 * S)
-    v2b = "0.929"
-    vb = draw.textbbox((0, 0), v2b, font=f_num_big)
-    draw.text(((b2b_x0 + b2b_x1 - (vb[2] - vb[0])) // 2, b2b_y0 - 34 * S), v2b, font=f_num_big, fill=C_ORANGE)
-
-    dt2 = "Δr = −0.042 (600 ms stress)"
-    dtb2 = draw.textbbox((0, 0), dt2, font=f_small_bold)
-    draw.text((g2_cx - (dtb2[2] - dtb2[0]) // 2, b2b_y0 - 66 * S), dt2, font=f_small_bold, fill=C_ORANGE)
-
-    g1_lines = [
-        "Extended suite:",
-        "1,024 records, 299 truncated",
-        "(SG(51,3)+NNLS baseline)",
-    ]
-    for idx, line in enumerate(g1_lines):
-        fn = f_small_bold if idx < 2 else f_small
-        lb = draw.textbbox((0, 0), line, font=fn)
-        draw.text((g1_cx - (lb[2] - lb[0]) // 2, ch_y1 + (14 + idx * 24) * S), line, font=fn, fill=C_NAVY)
-
-    g2_lines = [
-        "600 ms stress suite:",
-        "128 paired records",
-        "(SG(31,2)+NNLS baseline)",
-    ]
-    for idx, line in enumerate(g2_lines):
-        fn = f_small_bold if idx < 2 else f_small
-        lb = draw.textbbox((0, 0), line, font=fn)
-        draw.text((g2_cx - (lb[2] - lb[0]) // 2, ch_y1 + (14 + idx * 24) * S), line, font=fn, fill=C_NAVY)
-
-    subB_y0 = ch_y1 + 102 * S
-    subB_y1 = bot_y - 24 * S
-    draw_rounded_rect(draw, (pB_x0 + 24 * S, subB_y0, pB_x1 - 24 * S, subB_y1),
-                      radius=12 * S, fill=C_GRAY_BG, outline=C_BORDER, width=2 * S)
-    draw.text((pB_x0 + 38 * S, subB_y0 + 14 * S),
-              "Sub-Suite Breakdown (Table 3 Verified Metrics):", font=f_sec_bold, fill=C_NAVY)
-
-    sub_rows = [
-        "• Full-window subset (725 records):  A-final r = 0.953 vs. SG(51,3)+NNLS r = 0.920 (Δr = +0.032)",
-        "• Randomly truncated subset (299 records):  A-final r = 0.928 vs. SG(51,3)+NNLS r = 0.906 (Δr = +0.022)",
-        "• 600 ms severe-cutoff suite (128 records):  A-final r = 0.887 vs. SG(31,2)+NNLS r = 0.929 (Δr = −0.042)",
-        "• Interpretation: Learned prior improves interpolation under moderate random truncation, whereas",
-        "  classical NNLS remains more stable when slow T₂ components lose tail observations at 600 ms.",
-    ]
-    sy = subB_y0 + 52 * S
-    max_sub_x = pB_x1 - 36 * S
-    for idx, row_txt in enumerate(sub_rows):
-        fn = f_small_bold if idx < 3 else f_small_ital
-        col = C_NAVY if idx < 3 else C_SLATE
-        rb = draw.textbbox((pB_x0 + 38 * S, sy), row_txt, font=fn)
-        assert rb[2] <= max_sub_x, f"Sub-row {idx} overflows Panel B box: {rb[2]} > {max_sub_x}"
-        draw.text((pB_x0 + 38 * S, sy), row_txt, font=fn, fill=col)
-        sy += 40 * S if idx < 3 else 30 * S
-
-    # =========================================================================
-    # PANEL C: Three Core Evidence Cards + Decision Takeaway Banner
-    # =========================================================================
-    c_x0, c_x1 = pC_x0 + 24 * S, pC_x1 - 24 * S
-    max_card_x = c_x1 - 16 * S
-
-    cards = [
-        (
-            "1. Measured Holdout Evaluation Is Protocol-Sensitive (35 Records)",
-            C_BLUE,
-            C_BLUE_LIGHT,
-            [
-                ("P-mag (raw magnitude interpolation):", "A-final r = 0.8948 vs. SG(31,2)+NNLS r = 0.8909 (CI spans zero)"),
-                ("P-pea (vendor echo-peak envelope):", "A-final r = 0.8929 vs. SG(31,2)+NNLS r = 0.9042 (Δr = −0.0113)"),
-                ("Forward decay residual (RMSE):", "A-final lower in P-mag (0.0326 vs. 0.0369) & P-pea (0.0097 vs. 0.0163)"),
-                ("Implication:", "Fix envelope protocol & report both spectral r and forward RMSE."),
-            ],
-        ),
-        (
-            "2. Upstream Denoising Gains Depend on Noise & Inverter (15 Records)",
-            C_ORANGE,
-            C_ORANGE_LIGHT,
-            [
-                ("Strong injected noise (α = 1.0, NNLS λ = 1000):", "Mean r rises from 0.885 (Raw) to 0.912 (SG(21,2)) and 0.919 (Edge)"),
-                ("Main-peak error at α = 1.0 (NNLS λ = 1000):", "Drops from 0.3335 decade (Raw) to 0.1450 (SG) and 0.1494 (Edge)"),
-                ("Low-to-moderate noise (α ≤ 0.3):", "Small differences across the 3 paths (|Δr| ≤ 0.0006); CIs span zero"),
-                ("Fixed A-original inverter:", "α = 1.0 r is 0.888 (Raw), 0.893 (SG), 0.894 (Edge); Raw highest at α ≤ 0.3"),
-            ],
-        ),
-        (
-            "3. Zynq-7020 ARM Replay Consistency & Compute Benchmarks",
-            C_TEAL,
-            (232, 248, 245),
-            [
-                ("15-record file replay (14.25 kB, 3,563 params):", "Matches host float32 (r = 1.000000, RMSE ≤ 3.2×10⁻⁶; 4k-echo harness ~16.99 s)"),
-                ("Separate 4,000-echo compute benchmark:", "Dual-core Edge ECA-DS-TCN: 14.04 s vs. 1-core 2-ch SG(21,2): 0.179 s"),
-                ("3,000- / 1,800-echo compute benchmark:", "Dual-core: 10.52 s / 6.32 s (single-core: 19.57 s / 11.78 s)"),
-                ("Engineering rule:", "Only consider neural denoise when cascade gain justifies its latency."),
-            ],
-        ),
-    ]
-
-    cy = top_y + 78 * S
-    card_h = 318 * S
-    for title_c, border_c, hdr_bg, rows_c in cards:
-        draw_rounded_rect(draw, (c_x0, cy, c_x1, cy + card_h),
-                          radius=12 * S, fill=(255, 255, 255), outline=border_c, width=2 * S)
-        draw_rounded_rect(draw, (c_x0, cy, c_x1, cy + 46 * S),
-                          radius=12 * S, fill=hdr_bg, outline=border_c, width=2 * S)
-        draw.rectangle((c_x0 + 2 * S, cy + 32 * S, c_x1 - 2 * S, cy + 46 * S), fill=hdr_bg)
-        draw.line([(c_x0, cy + 46 * S), (c_x1, cy + 46 * S)], fill=border_c, width=2 * S)
-        draw.text((c_x0 + 18 * S, cy + 10 * S), title_c, font=f_sec_bold, fill=C_NAVY)
-
-        ry = cy + 58 * S
-        for k_txt, v_txt in rows_c:
-            kb = draw.textbbox((c_x0 + 20 * S, ry), "• " + k_txt, font=f_small_bold)
-            vb = draw.textbbox((c_x0 + 38 * S, ry + 24 * S), v_txt, font=f_small)
-            assert kb[2] <= max_card_x, f"Card key overflows: {k_txt}"
-            assert vb[2] <= max_card_x, f"Card value overflows: {v_txt} ({vb[2]} > {max_card_x})"
-            draw.text((c_x0 + 20 * S, ry), "• " + k_txt, font=f_small_bold, fill=C_NAVY)
-            draw.text((c_x0 + 38 * S, ry + 24 * S), v_txt, font=f_small, fill=C_SLATE)
-            ry += 62 * S
-
-        cy += card_h + 22 * S
-
-    syn_y0 = cy + 2 * S
-    syn_y1 = bot_y - 24 * S
-    draw_rounded_rect(draw, (c_x0, syn_y0, c_x1, syn_y1),
-                      radius=12 * S, fill=C_NAVY, outline=C_NAVY, width=2 * S)
-    s_line1 = "Decision Basis for Constrained LF-NMR Processing (Table 6):"
-    s_line2 = "Select paths jointly by valid window, fixed envelope protocol,"
-    s_line3 = "downstream inverter response, and measured preprocessing cost."
-    draw.text((c_x0 + 22 * S, syn_y0 + 14 * S), s_line1, font=f_sec_bold, fill=(255, 218, 128))
-    draw.text((c_x0 + 22 * S, syn_y0 + 50 * S), s_line2, font=f_body_bold, fill=(255, 255, 255))
-    draw.text((c_x0 + 22 * S, syn_y0 + 82 * S), s_line3, font=f_body_bold, fill=(255, 255, 255))
-
-    final_img = img.resize((2660, 1400), Image.Resampling.LANCZOS)
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    final_img.save(str(OUT_PATH), format="PNG", optimize=True)
-    final_img.save(str(BACKUP_OUT), format="PNG", optimize=True)
-    print(f"Saved Graphical Abstract: {OUT_PATH} ({final_img.size[0]}x{final_img.size[1]})")
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_png = OUT_DIR / "GA_JMR_20261113.png"
+    out_tif = OUT_DIR / "GA_JMR_20261113.tif"
+    final_img = build_ga_image()
+    final_img.save(str(out_png), format="PNG", dpi=(300, 300), optimize=True)
+    final_img.save(str(out_tif), format="TIFF", compression="tiff_lzw", dpi=(300, 300))
+    print(f"Saved Graphical Abstract PNG & TIFF: {out_png} ({final_img.size[0]}x{final_img.size[1]}, 300 dpi)")
 
 
 if __name__ == "__main__":

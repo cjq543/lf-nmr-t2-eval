@@ -3,4 +3,7 @@ __pycache__/
 *$py.class
 .DS_Store
 Thumbs.db
+results/*
+!results/.gitkeep
+
 

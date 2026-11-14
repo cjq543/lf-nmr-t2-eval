@@ -1,0 +1,39 @@
+{
+  "paired": {
+    "sim_test": {
+      "n": 1024,
+      "mean_r_gain_A_vs_SG": 0.030465390816506233,
+      "paired_bootstrap_95pct_ci": [
+        0.027067234821942673,
+        0.03397252776530076
+      ],
+      "A_lower_spec_l2_than_SG_cases": 853
+    },
+    "sim_low": {
+      "n": 192,
+      "mean_r_gain_A_vs_SG": 0.09523404851343097,
+      "paired_bootstrap_95pct_ci": [
+        0.07883405528647089,
+        0.11308293340301759
+      ],
+      "A_lower_spec_l2_than_SG_cases": 174
+    }
+  },
+  "A_3seed_test_r_mean": 0.9753114514598762,
+  "A_3seed_test_r_sample_std": 0.0003061633698430141,
+  "cpu_timing_single_fixed_input_2threads": {
+    "A_Conformer": {
+      "repetitions": 40,
+      "warmup": 5,
+      "median_ms": 14.545899990480393,
+      "p95_ms": 16.934419987956062
+    },
+    "SG_NNLS": {
+      "repetitions": 40,
+      "warmup": 5,
+      "median_ms": 7.905250007752329,
+      "p95_ms": 9.535194985801354
+    }
+  },
+  "timing_scope": "Unit echo array to spectrum; same cached sample #0; excludes file I/O, echo extraction, acquisition, board processing, transmission and GUI. No global speed claim."
+}
